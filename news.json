@@ -1,5 +1,27 @@
 [
   {
+    "news_id": "ecma-crypto-warning-2026",
+    "lang": "en",
+    "title": "Ethiopia - ECMA Warns Consumers About the Risks of Unlicensed Investment Platforms",
+    "summary": "The Ethiopian authority highlights the dangers of unregistered platforms and guaranteed-return promises directed at retail savers.",
+    "body_text": "ADDIS ABABA – The Ethiopia Capital Market Authority (ECMA) has issued a consumer warning about the risks associated with unlicensed investment platforms and financial services offered without official supervision. The authority urges citizens to always verify the existence of a license, the legal identity of the provider, and the actual regulatory oversight before transferring funds.\n\nAccording to ECMA, many unauthorized operators use promises of high returns and guaranteed profits to attract retail savers, often through digital channels, private messages, or social media groups. The authority recommends caution, encourages the public to check the list of authorized entities, and reminds consumers that no investment is risk-free.\n\nThe warning is part of ECMA’s financial education and consumer protection efforts aimed at preventing fraud, abuse, and misleading practices in Ethiopia’s capital market.",
+    "source_url": "https://www.ecma.et/",
+    "theme": "educational",
+    "published_at": "2026-10-10T15:00:00.000Z",
+    "status": "published"
+  },
+  {
+    "news_id": "ecma-crypto-warning-2026",
+    "lang": "it",
+    "title": "Ethiopia - ECMA avverte i consumatori sui rischi delle piattaforme di investimento non autorizzate",
+    "summary": "L’autorità etiope richiama l’attenzione sui pericoli delle piattaforme non registrate e sulle promesse di rendimento garantito rivolte ai piccoli risparmiatori.",
+    "body_text": "ADDIS ABEBA – L’Ethiopia Capital Market Authority (ECMA) ha pubblicato un avviso rivolto ai consumatori per segnalare i rischi legati alle piattaforme di investimento non autorizzate e ai servizi finanziari offerti senza vigilanza ufficiale. L’autorità invita i cittadini a verificare sempre l’esistenza di una licenza, la sede legale del soggetto e la reale supervisione regolamentare prima di trasferire fondi.\n\nSecondo l’ECMA, molti soggetti non autorizzati utilizzano promesse di rendimenti elevati e garanzie di guadagno per attrarre piccoli risparmiatori, spesso attraverso canali digitali, messaggi privati o gruppi social. L’autorità raccomanda cautela, invita a controllare l’elenco delle entità autorizzate e ricorda che nessun investimento è privo di rischio.\n\nL’avviso rientra nell’attività di educazione finanziaria e tutela dei consumatori promossa dall’ECMA per prevenire frodi, abusi e pratiche ingannevoli nel mercato dei capitali etiope.",
+    "source_url": "https://www.ecma.et/",
+    "theme": "educational",
+    "published_at": "2026-10-10T15:00:00.000Z",
+    "status": "published"
+  },
+  {
     "news_id": "ipo-montenegro-budva-2026",
     "lang": "en",
     "title": "IPO Montenegro in Budva 2026: financial education and fraud prevention",
@@ -30,6 +52,28 @@
     "source_url": "https://www.ipomontenegro.me/ipo-svjetski-kongres-2026-zajedno-oblikujemo-sigurniju-buducnost/",
     "theme": "educational",
     "published_at": "2026-10-09T19:30:00.000Z",
+    "status": "published"
+  },
+  {
+    "news_id": "new-york-sandoz-2026",
+    "lang": "en",
+    "title": "New York - Attorney General James Secures $400 Million From Sandoz for Illegal Scheme to Inflate Drug Prices",
+    "summary": "The companies in the scheme, some of which increased prices by as much as 1,000 percent, manufactured essential medications to treat diseases ranging from diabetes to cancer to ADHD.",
+    "body_text": "NEW YORK – New York Attorney General Letitia James today joined a bipartisan coalition of 47 other attorneys general in securing $400 million from Sandoz Inc. and Fougera Pharmaceuticals Inc. (Sandoz) for their role in a long-running, coordinated scheme with other pharmaceutical companies to inflate generic drug prices and reduce competition. The settlement is the result of ongoing lawsuits by Attorney General James and the coalition against dozens of companies that made illegal agreements to coordinate the supply and sale of generic drugs in order to fix prices and boost profits. The companies in the scheme, some of which increased prices by as much as 1,000 percent, manufactured essential medications to treat diseases ranging from diabetes to cancer to ADHD.",
+    "source_url": "https://ag.ny.gov/press-release/2026/attorney-general-james-secures-400-million-sandoz-illegal-scheme-inflate-drug",
+    "theme": "alert",
+    "published_at": "2026-10-10T12:00:00.000Z",
+    "status": "published"
+  },
+  {
+    "news_id": "new-york-sandoz-2026",
+    "lang": "it",
+    "title": "New York - Il procuratore generale James ottiene 400 milioni di dollari da Sandoz per un piano illegale volto a gonfiare i prezzi dei farmaci.",
+    "summary": "Le società coinvolte nello schema, alcune delle quali hanno aumentato i prezzi fino al 1000 per cento, producevano medicinali essenziali per il trattamento di patologie che andavano dal diabete al cancro fino all'ADHD.",
+    "body_text": "NEW YORK – Il Procuratore Generale di New York Letitia James ha annunciato oggi l'adesione di una coalizione bipartisan di 47 altri procuratori generali all'accordo da 400 milioni di dollari con Sandoz Inc. e Fougera Pharmaceuticals Inc. (Sandoz), per il loro ruolo in un piano coordinato e di lunga durata con altre aziende farmaceutiche volto a gonfiare i prezzi dei farmaci generici e ridurre la concorrenza. L'accordo è il risultato di cause in corso promosse dal Procuratore Generale James e dalla coalizione contro decine di aziende che avevano stipulato intese illegali per coordinare l'offerta e la vendita di farmaci generici al fine di fissare i prezzi e aumentare i profitti. Le società coinvolte nello schema, alcune delle quali hanno aumentato i prezzi fino al 1000 per cento, producevano medicinali essenziali per il trattamento di patologie che andavano dal diabete al cancro fino all'ADHD.",
+    "source_url": "https://ag.ny.gov/press-release/2026/attorney-general-james-secures-400-million-sandoz-illegal-scheme-inflate-drug",
+    "theme": "alert",
+    "published_at": "2026-10-10T12:00:00.000Z",
     "status": "published"
   }
 ]
