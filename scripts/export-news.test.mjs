@@ -35,6 +35,35 @@ test('deterministic order and duplicate translation detection', () => {
   assert.throws(() => exportRecords([record(), record()]), /duplicate/);
 });
 
+test('exports all 13 allowed language codes unchanged in deterministic order', () => {
+  const languages = ['it', 'en', 'me', 'ar', 'hi', 'sq', 'ro', 'et', 'lt', 'bs', 'nl', 'sv', 'el'];
+  const records = languages.map((lang) => record({ lang }));
+  const content = exportRecords(records);
+  assert.deepEqual(JSON.parse(content).map((row) => row.lang), [...languages].sort());
+  assert.equal(content, exportRecords([...records].reverse()));
+});
+
+test('rejects unsupported published languages, aliases, casing and whitespace with safe diagnostics', () => {
+  for (const lang of [
+    'fr', 'de', 'es', 'pt', 'xx', 'cnr', 'sr', 'eng',
+    'IT', 'EN', 'ME', 'It', ' it', 'it ', '\ten', 'me\n', '', '  ', '\t\n',
+    options.token,
+  ]) {
+    assert.throws(() => exportRecords([record(), record({ lang })]), (error) => {
+      assert.match(error.message, /^Record 1: lang /);
+      assert.equal(error.message.includes(options.token), false);
+      return true;
+    });
+  }
+});
+
+test('skips drafts with unsupported or malformed languages before validation', () => {
+  const drafts = ['fr', 'de', 'es', 'pt', 'cnr', 'IT', ' it ', '', '  ', null, 123, undefined]
+    .map((lang) => record({ status: 'draft', lang }));
+  assert.equal(exportRecords([record(), ...drafts]), exportRecords([record()]));
+  assert.equal(exportRecords(drafts), '[]\n');
+});
+
 test('rejects every invalid published record instead of dropping it', () => {
   for (const field of ['news_id', 'lang', 'title', 'published_at']) {
     for (const value of ['', '  ', null, 123, undefined]) {
@@ -130,6 +159,28 @@ test('atomic publishing preserves the previous feed on any export failure', asyn
     await rm(outputPath);
     assert.equal(await publishNews(valid), true);
     assert.deepEqual(await readdir(directory), ['news.json']);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('invalid published languages on a later page preserve the existing feed without temporary files', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'airtable-news-test-'));
+  const outputPath = join(directory, 'news.json');
+  const previous = exportRecords([record()]);
+  try {
+    await writeFile(outputPath, previous);
+    for (const lang of ['fr', 'de', 'es', 'pt', 'cnr', 'ME', ' me ', '', '  ']) {
+      await assert.rejects(publishNews({
+        ...options,
+        outputPath,
+        fetchImpl: async (url) => url.searchParams.has('offset')
+          ? response([record({ lang })])
+          : response([record()], { offset: 'next' }),
+      }), /^Error: Record 1: lang /);
+      assert.equal(await readFile(outputPath, 'utf8'), previous);
+      assert.deepEqual(await readdir(directory), ['news.json']);
+    }
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

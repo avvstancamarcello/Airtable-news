@@ -25,6 +25,18 @@ data ISO (`2026-10-09`) o un timestamp ISO con fuso orario
 altrimenti sono esportati come `""`; `source_url` deve essere HTTP(S), senza
 credenziali. Le coppie duplicate `news_id` / `lang` causano un errore.
 
+Il campo single-select `lang` ammette **esattamente 13 codici**:
+`it`, `en`, `me`, `ar`, `hi`, `sq`, `ro`, `et`, `lt`, `bs`, `nl`, `sv`, `el`.
+`me` resta il codice applicativo esistente e non viene normalizzato. Non sono
+ammessi altri codici (inclusi `fr`, `de`, `es`, `pt`), alias, maiuscole o spazi
+aggiuntivi; i valori vuoti non sono validi. Non viene rilevata automaticamente
+la lingua né convertito il codice o tradotto il contenuto. Una lingua non valida
+in un record `published` interrompe l'intera esportazione, senza scartare
+silenziosamente il record; le bozze continuano a essere ignorate.
+Ogni futura aggiunta richiede una modifica esplicita a `ALLOWED_LANGUAGES` in
+`scripts/export-news.mjs`, test aggiornati e l'allineamento delle opzioni Airtable.
+Il workflow esegue i test prima dell'esportazione.
+
 Un errore API, di paginazione o di validazione interrompe l'intera esportazione:
 il precedente `news.json` resta intatto. Solo dopo la validazione completa il
 file viene sostituito atomicamente e committato se diverso. Una lettura completa

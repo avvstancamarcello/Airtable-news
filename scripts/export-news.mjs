@@ -7,6 +7,7 @@ export const FIELDS = [
   'theme', 'published_at', 'status',
 ];
 const REQUIRED = new Set(['news_id', 'lang', 'title', 'published_at', 'status']);
+const ALLOWED_LANGUAGES = new Set(['it', 'en', 'me', 'ar', 'hi', 'sq', 'ro', 'et', 'lt', 'bs', 'nl', 'sv', 'el']);
 
 function validDate(value) {
   const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2}))?$/.exec(value);
@@ -38,6 +39,9 @@ export function exportRecords(records) {
         throw new Error(`Record ${index}: ${field} must be a${REQUIRED.has(field) ? ' non-empty' : ''} string`);
       }
       row[field] = value;
+    }
+    if (!ALLOWED_LANGUAGES.has(row.lang)) {
+      throw new Error(`Record ${index}: lang must be exactly one of ${[...ALLOWED_LANGUAGES].join(', ')}`);
     }
     if (!validDate(row.published_at)) {
       throw new Error(`Record ${index}: published_at must be an ISO date or timestamp with timezone`);
