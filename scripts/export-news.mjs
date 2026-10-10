@@ -6,6 +6,9 @@ export const FIELDS = [
   'news_id', 'lang', 'title', 'summary', 'body_text', 'source_url',
   'theme', 'published_at', 'status',
 ];
+const ALLOWED_LANGUAGES = new Set([
+  'it', 'en', 'me', 'ar', 'hi', 'sq', 'ro', 'et', 'lt', 'bs', 'nl', 'sv', 'el', 'fr',
+]);
 const REQUIRED = new Set(['news_id', 'lang', 'title', 'published_at', 'status']);
 
 function validDate(value) {
@@ -38,6 +41,9 @@ export function exportRecords(records) {
         throw new Error(`Record ${index}: ${field} must be a${REQUIRED.has(field) ? ' non-empty' : ''} string`);
       }
       row[field] = value;
+    }
+    if (!ALLOWED_LANGUAGES.has(row.lang)) {
+      throw new Error(`Record ${index}: unsupported lang "${row.lang}"; allowed languages are ${[...ALLOWED_LANGUAGES].join(', ')}`);
     }
     if (!validDate(row.published_at)) {
       throw new Error(`Record ${index}: published_at must be an ISO date or timestamp with timezone`);
