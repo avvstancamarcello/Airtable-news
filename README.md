@@ -44,6 +44,12 @@ Il frontend legge solamente:
 e non riceve il PAT né chiama Airtable. Nessuna modifica al repository frontend
 è necessaria per questa pipeline.
 
+L’esportazione dei news record accetta solo la allowlist definitiva di 14 codici lingua:
+`it, en, me, ar, hi, sq, ro, et, lt, bs, nl, sv, el, fr`.
+
+I record pubblicati con un `lang` fuori lista vengono rifiutati con errore esplicito; i `draft` restano esclusi dall’export.  
+La modifica mantiene il comportamento atomico dell’export e non introduce normalizzazione o traduzione automatica delle lingue.
+
 ### Verifica locale (Node.js 22)
 
 ```sh
