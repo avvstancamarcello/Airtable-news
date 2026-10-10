@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { exportRecords, fetchRecords, FIELDS, publishNews } from './export-news.mjs';
 
 const record = (fields = {}) => ({
@@ -62,6 +64,28 @@ test('skips drafts with unsupported or malformed languages before validation', (
     .map((lang) => record({ status: 'draft', lang }));
   assert.equal(exportRecords([record(), ...drafts]), exportRecords([record()]));
   assert.equal(exportRecords(drafts), '[]\n');
+});
+
+test('CLI reports safe language diagnostics but hides unexpected error details', () => {
+  const exporter = fileURLToPath(new URL('./export-news.mjs', import.meta.url));
+  for (const lang of ['fr', '', '  ', options.token, null]) {
+    const mock = lang === null
+      ? `throw new Error(${JSON.stringify(options.token)})`
+      : `return { ok: true, json: async () => ({ records: ${JSON.stringify([record({ lang })])} }) }`;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', `
+      globalThis.fetch = async () => { ${mock} };
+      process.argv[1] = ${JSON.stringify(exporter)};
+      await import(${JSON.stringify(new URL('./export-news.mjs', import.meta.url).href)});
+    `], {
+      encoding: 'utf8',
+      env: { ...process.env, AIRTABLE_PAT: options.token, AIRTABLE_BASE_ID: options.baseId },
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /News export failed; published file preserved/);
+    assert.equal(result.stderr.includes(options.token), false);
+    if (lang !== null) assert.match(result.stderr, /Record 0: lang /);
+    else assert.doesNotMatch(result.stderr, /Record 0:/);
+  }
 });
 
 test('rejects every invalid published record instead of dropping it', () => {
