@@ -19,6 +19,11 @@ Repository dedicato al feed JSON delle news esportate da Airtable per la Financi
    Le pull request eseguono solo i test, senza credenziali Airtable.
 
 L'esportatore legge tutte le pagine e include solo `status === 'published'`.
+Per i record pubblicati, `lang` deve essere esattamente uno dei 14 codici
+`it`, `en`, `me`, `ar`, `hi`, `sq`, `ro`, `et`, `lt`, `bs`, `nl`, `sv`, `el`,
+`fr`. Non vengono accettati alias o varianti di maiuscole/spazi e non vengono
+normalizzate o tradotte le lingue. Per aggiungere un codice occorre modificare
+la allowlist nel codice e aggiungere i relativi test.
 I quattro campi obbligatori sono stringhe non vuote; `published_at` accetta una
 data ISO (`2026-10-09`) o un timestamp ISO con fuso orario
 (`2026-10-09T19:30:00Z`). I campi facoltativi devono essere stringhe se presenti,

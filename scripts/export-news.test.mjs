@@ -29,6 +29,17 @@ test('exports only expected fields and exact published status, preserving multil
   assert.equal(rows[0].source_url, '');
 });
 
+test('accepts exactly the supported language codes without normalization', () => {
+  const allowed = ['it', 'en', 'me', 'ar', 'hi', 'sq', 'ro', 'et', 'lt', 'bs', 'nl', 'sv', 'el', 'fr'];
+  for (const lang of allowed) {
+    assert.equal(JSON.parse(exportRecords([record({ lang })]))[0].lang, lang);
+  }
+  for (const lang of ['de', 'es', 'pt', 'sr', 'IT', 'EN', ' it', 'it ', 'fr ']) {
+    assert.throws(() => exportRecords([record({ lang })]), /unsupported lang/);
+  }
+  assert.doesNotThrow(() => exportRecords([record({ lang: 'de', status: 'draft' })]));
+});
+
 test('deterministic order and duplicate translation detection', () => {
   const records = [record(), record({ lang: 'en' }), record({ news_id: 'another' })];
   assert.equal(exportRecords(records), exportRecords([...records].reverse()));
@@ -114,6 +125,7 @@ test('atomic publishing preserves the previous feed on any export failure', asyn
       async () => ({ ok: false, status: 429 }),
       async () => ({ ok: true, json: async () => { throw new Error('bad JSON'); } }),
       async () => response([record({ published_at: 'invalid' })]),
+      async () => response([record({ lang: 'de' })]),
       async (url) => url.searchParams.has('offset')
         ? { ok: false, status: 500 }
         : response([record()], { offset: 'next' }),
