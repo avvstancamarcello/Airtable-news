@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { exportRecords, fetchRecords, FIELDS, publishNews } from './export-news.mjs';
 
 const record = (fields = {}) => ({
@@ -33,6 +35,57 @@ test('deterministic order and duplicate translation detection', () => {
   const records = [record(), record({ lang: 'en' }), record({ news_id: 'another' })];
   assert.equal(exportRecords(records), exportRecords([...records].reverse()));
   assert.throws(() => exportRecords([record(), record()]), /duplicate/);
+});
+
+test('exports all 13 allowed language codes unchanged in deterministic order', () => {
+  const languages = ['it', 'en', 'me', 'ar', 'hi', 'sq', 'ro', 'et', 'lt', 'bs', 'nl', 'sv', 'el'];
+  const records = languages.map((lang) => record({ lang }));
+  const content = exportRecords(records);
+  assert.deepEqual(JSON.parse(content).map((row) => row.lang), [...languages].sort());
+  assert.equal(content, exportRecords([...records].reverse()));
+});
+
+test('rejects unsupported published languages, aliases, casing and whitespace with safe diagnostics', () => {
+  for (const lang of [
+    'fr', 'de', 'es', 'pt', 'xx', 'cnr', 'sr', 'eng',
+    'IT', 'EN', 'ME', 'It', ' it', 'it ', '\ten', 'me\n', '', '  ', '\t\n',
+    options.token,
+  ]) {
+    assert.throws(() => exportRecords([record(), record({ lang })]), (error) => {
+      assert.match(error.message, /^Record 1: lang /);
+      assert.equal(error.message.includes(options.token), false);
+      return true;
+    });
+  }
+});
+
+test('skips drafts with unsupported or malformed languages before validation', () => {
+  const drafts = ['fr', 'de', 'es', 'pt', 'cnr', 'IT', ' it ', '', '  ', null, 123, undefined]
+    .map((lang) => record({ status: 'draft', lang }));
+  assert.equal(exportRecords([record(), ...drafts]), exportRecords([record()]));
+  assert.equal(exportRecords(drafts), '[]\n');
+});
+
+test('CLI reports safe language diagnostics but hides unexpected error details', () => {
+  const exporter = fileURLToPath(new URL('./export-news.mjs', import.meta.url));
+  for (const lang of ['fr', '', '  ', options.token, null]) {
+    const mock = lang === null
+      ? `throw new Error(${JSON.stringify(options.token)})`
+      : `return { ok: true, json: async () => ({ records: ${JSON.stringify([record({ lang })])} }) }`;
+    const result = spawnSync(process.execPath, ['--input-type=module', '--eval', `
+      globalThis.fetch = async () => { ${mock} };
+      process.argv[1] = ${JSON.stringify(exporter)};
+      await import(${JSON.stringify(new URL('./export-news.mjs', import.meta.url).href)});
+    `], {
+      encoding: 'utf8',
+      env: { ...process.env, AIRTABLE_PAT: options.token, AIRTABLE_BASE_ID: options.baseId },
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /News export failed; published file preserved/);
+    assert.equal(result.stderr.includes(options.token), false);
+    if (lang !== null) assert.match(result.stderr, /Record 0: lang /);
+    else assert.doesNotMatch(result.stderr, /Record 0:/);
+  }
 });
 
 test('rejects every invalid published record instead of dropping it', () => {
@@ -130,6 +183,28 @@ test('atomic publishing preserves the previous feed on any export failure', asyn
     await rm(outputPath);
     assert.equal(await publishNews(valid), true);
     assert.deepEqual(await readdir(directory), ['news.json']);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('invalid published languages on a later page preserve the existing feed without temporary files', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'airtable-news-test-'));
+  const outputPath = join(directory, 'news.json');
+  const previous = exportRecords([record()]);
+  try {
+    await writeFile(outputPath, previous);
+    for (const lang of ['fr', 'de', 'es', 'pt', 'cnr', 'ME', ' me ', '', '  ']) {
+      await assert.rejects(publishNews({
+        ...options,
+        outputPath,
+        fetchImpl: async (url) => url.searchParams.has('offset')
+          ? response([record({ lang })])
+          : response([record()], { offset: 'next' }),
+      }), /^Error: Record 1: lang /);
+      assert.equal(await readFile(outputPath, 'utf8'), previous);
+      assert.deepEqual(await readdir(directory), ['news.json']);
+    }
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

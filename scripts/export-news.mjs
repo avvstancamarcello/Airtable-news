@@ -7,6 +7,9 @@ export const FIELDS = [
   'theme', 'published_at', 'status',
 ];
 const REQUIRED = new Set(['news_id', 'lang', 'title', 'published_at', 'status']);
+const ALLOWED_LANGUAGES = new Set(['it', 'en', 'me', 'ar', 'hi', 'sq', 'ro', 'et', 'lt', 'bs', 'nl', 'sv', 'el']);
+
+class RecordValidationError extends Error {}
 
 function validDate(value) {
   const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2}))?$/.exec(value);
@@ -35,9 +38,12 @@ export function exportRecords(records) {
     for (const field of FIELDS) {
       const value = fields[field] === undefined ? '' : fields[field];
       if (typeof value !== 'string' || (REQUIRED.has(field) && !value.trim())) {
-        throw new Error(`Record ${index}: ${field} must be a${REQUIRED.has(field) ? ' non-empty' : ''} string`);
+        throw new RecordValidationError(`Record ${index}: ${field} must be a${REQUIRED.has(field) ? ' non-empty' : ''} string`);
       }
       row[field] = value;
+    }
+    if (!ALLOWED_LANGUAGES.has(row.lang)) {
+      throw new RecordValidationError(`Record ${index}: lang must be exactly one of ${[...ALLOWED_LANGUAGES].join(', ')}`);
     }
     if (!validDate(row.published_at)) {
       throw new Error(`Record ${index}: published_at must be an ISO date or timestamp with timezone`);
@@ -125,7 +131,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       outputPath: resolve(process.argv[2] || 'news.json'),
     });
     console.log(changed ? 'Validated news.json updated.' : 'news.json unchanged.');
-  } catch {
+  } catch (error) {
+    if (error instanceof RecordValidationError) console.error(error.message);
     console.error('News export failed; published file preserved. Check Airtable access and record validation.');
     process.exitCode = 1;
   }
