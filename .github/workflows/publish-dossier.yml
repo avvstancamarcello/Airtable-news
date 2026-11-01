@@ -1,0 +1,46 @@
+name: Publish Dossier from Airtable
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [publish_dossier]
+  schedule:
+    - cron: '0 */6 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-dossier
+  cancel-in-progress: false
+
+jobs:
+  fetch-dossier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Fetch Archivio Dossier da Airtable
+        env:
+          AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
+          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          AIRTABLE_TABLE_ID: tblNgUA368TzwLuZ7
+          OUTPUT_DIR: content/news/dossier
+        run: node scripts/fetch-dossier.mjs
+      - name: Commit dei contenuti generati
+        run: |
+          git add -A -- content/news/dossier
+          if git diff --cached --quiet -- content/news/dossier; then
+            echo "Nessuna modifica."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Aggiorna Dossier da Airtable"
+          git push origin HEAD:main
