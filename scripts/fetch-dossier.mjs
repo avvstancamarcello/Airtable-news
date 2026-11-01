@@ -9,6 +9,7 @@ async function fetchAll() {
   let offset;
   do {
     const url = new URL(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`);
+    url.searchParams.set('filterByFormula', '{Pubblica sul web}=1');
     if (offset) url.searchParams.set('offset', offset);
     const res = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_PAT}` } });
     if (!res.ok) throw new Error(`Airtable ${res.status}: ${await res.text()}`);
@@ -62,6 +63,7 @@ export function build(f, lang, cfg, id) {
 }
 
 const records = await fetchAll();
+fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 let n = 0;
 for (const r of records) {
