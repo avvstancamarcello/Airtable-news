@@ -32,7 +32,7 @@ jobs:
         env:
           AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
-          AIRTABLE_DOSSIER_TABLE_ID: tblNgUA368TzwLuZ7
+          AIRTABLE_DOSSIER_TABLE_ID: ${{ secrets.AIRTABLE_DOSSIER_TABLE_ID }}
           OUTPUT_FILE: data/dossier.json
         run: node scripts/fetch-dossier.mjs
       - name: Commit del JSON solo se cambiato

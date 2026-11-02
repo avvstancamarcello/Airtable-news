@@ -34,7 +34,8 @@ export async function fetchAll({ token, baseId, tableId, fetchImpl = fetch }) {
   const records = [];
   let offset;
   do {
-    const url = new URL(`https://api.airtable.com/v0/${baseId}/${tableId}`);
+    const url = new URL(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}`);
+    url.searchParams.set('pageSize', '100');
     url.searchParams.set('filterByFormula', '{Pubblica sul web}=1');
     if (offset) url.searchParams.set('offset', offset);
     const res = await fetchImpl(url, { headers: { Authorization: `Bearer ${token}` } });
