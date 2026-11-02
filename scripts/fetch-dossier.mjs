@@ -1,75 +1,78 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-const { AIRTABLE_PAT, AIRTABLE_BASE_ID, AIRTABLE_TABLE_ID } = process.env;
-const OUT = process.env.OUTPUT_DIR || 'content/news/dossier';
+export async function fetchDossier({ token, baseId, tableId, fetchImpl = fetch }) {
+  if (typeof token !== 'string' || !token.trim()) throw new Error('AIRTABLE_PAT is required');
+  if (typeof baseId !== 'string' || !/^app[a-zA-Z0-9]+$/.test(baseId)) {
+    throw new Error('AIRTABLE_BASE_ID must be an Airtable base ID');
+  }
+  if (typeof tableId !== 'string' || !tableId.trim()) {
+    throw new Error('AIRTABLE_DOSSIER_TABLE_ID is required');
+  }
 
-async function fetchAll() {
   const records = [];
+  const offsets = new Set();
   let offset;
   do {
-    const url = new URL(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`);
+    const url = new URL(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}`);
+    url.searchParams.set('pageSize', '100');
+    url.searchParams.set('filterByFormula', '{Pubblica sul web}=1');
     if (offset) url.searchParams.set('offset', offset);
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_PAT}` } });
-    if (!res.ok) throw new Error(`Airtable ${res.status}: ${await res.text()}`);
-    const data = await res.json();
-    records.push(...data.records);
-    offset = data.offset;
-  } while (offset);
+    const response = await fetchImpl(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      redirect: 'error',
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!response.ok) throw new Error(`Airtable request failed (HTTP ${response.status})`);
+    const page = await response.json();
+    if (!page || !Array.isArray(page.records)) throw new Error('Invalid Airtable response');
+    records.push(...page.records);
+    offset = page.offset;
+    if (offset !== undefined) {
+      if (typeof offset !== 'string' || !offset || offsets.has(offset)) {
+        throw new Error('Invalid or repeated Airtable pagination offset');
+      }
+      offsets.add(offset);
+    }
+  } while (offset !== undefined);
   return records;
 }
 
-const LANGS = {
-  IT: { title: 'Titolo IT', body: null },
-  EN: { title: 'Titolo EN', body: 'Testo Dossier (EN)' },
-  ES: { title: 'Titolo ES', body: 'Testo Dossier (ES)' },
-  FR: { title: 'Titolo FR', body: null },
-  DE: { title: 'Titolo DE', body: 'Testo Dossier (DE)' },
-};
+export async function publishDossier({ outputPath, ...options }) {
+  const records = await fetchDossier(options);
+  const content = `${JSON.stringify(records, null, 2)}\n`;
+  const outputDirectory = dirname(outputPath);
+  await mkdir(outputDirectory, { recursive: true });
 
-const q = (v) => JSON.stringify(v ?? '');
+  try {
+    if (await readFile(outputPath, 'utf8') === content) return false;
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
 
-export function build(f, lang, cfg, id) {
-  const title = f[cfg.title] || f['Titolo Record'];
-  const bodyText = cfg.body ? f[cfg.body] : '';
-  if (!f[cfg.title] && !bodyText) return null;
-
-  const fm = [
-    '---',
-    `title: ${q(title)}`,
-    `lang: ${q(lang.toLowerCase())}`,
-    `airtable_id: ${q(id)}`,
-    `author: ${q(f['Autore'])}`,
-    `source_type: ${q(f['Tipo Fonte / Canale'])}`,
-    'is_financial_authority: false',
-    `notebook_url: ${q(f['Link Notebook Originario'])}`,
-    `tags: ${JSON.stringify(f['Classificazione Archivio'] || [])}`,
-    `languages: ${JSON.stringify(f['Versione / Lingue'] || [])}`,
-    '---',
-  ].join('\n');
-
-  const note = f['Nota Editoriale e Paternità']
-    ? `> **Nota editoriale e paternità**\n> ${f['Nota Editoriale e Paternità'].replace(/\n/g, '\n> ')}\n\n`
-    : '';
-  const notebook = f['Link Notebook Originario']
-    ? `[Notebook di ${f['Autore'] || 'autore'}](${f['Link Notebook Originario']})\n\n`
-    : '';
-  const files = f['Link file lingue (.md / PDF)']
-    ? `\n\n## Download\n\n${f['Link file lingue (.md / PDF)']}\n`
-    : '';
-
-  return `${fm}\n\n${note}${notebook}${bodyText || ''}${files}\n`;
+  const temporaryDirectory = await mkdtemp(join(outputDirectory, '.dossier-export-'));
+  try {
+    const temporaryFile = join(temporaryDirectory, 'dossier.json');
+    await writeFile(temporaryFile, content, { encoding: 'utf8', mode: 0o644 });
+    await rename(temporaryFile, outputPath);
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+  return true;
 }
 
-const records = await fetchAll();
-fs.mkdirSync(OUT, { recursive: true });
-let n = 0;
-for (const r of records) {
-  for (const [lang, cfg] of Object.entries(LANGS)) {
-    const md = build(r.fields, lang, cfg, r.id);
-    if (!md) continue;
-    fs.writeFileSync(path.join(OUT, `${r.id}.${lang.toLowerCase()}.md`), md);
-    n++;
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  try {
+    const changed = await publishDossier({
+      token: process.env.AIRTABLE_PAT,
+      baseId: process.env.AIRTABLE_BASE_ID,
+      tableId: process.env.AIRTABLE_DOSSIER_TABLE_ID,
+      outputPath: resolve(process.env.OUTPUT_FILE || 'data/dossier.json'),
+    });
+    console.log(changed ? 'Dossier JSON updated.' : 'Dossier JSON unchanged.');
+  } catch (error) {
+    console.error(`Dossier export failed; published file preserved: ${error.message}`);
+    process.exitCode = 1;
   }
 }
-console.log(`Generati ${n} file da ${records.length} record.`);

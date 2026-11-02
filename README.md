@@ -62,3 +62,12 @@ Non inserire credenziali nei file o nei comandi salvati. I test usano risposte
 Airtable simulate e non richiedono accesso alla base. Non sono necessarie
 dipendenze npm. Lo script permette opzionalmente `AIRTABLE_TABLE` per una
 tabella diversa; il workflow usa `NEWS_SIMPLE`.
+
+## Pubblicazione Dossier Airtable → GitHub
+
+Il workflow `Publish Dossier from Airtable` usa i secret `AIRTABLE_PAT` e
+`AIRTABLE_BASE_ID` della pipeline esistente e `AIRTABLE_DOSSIER_TABLE_ID` per
+identificare la tabella Dossier. Legge tutte le pagine e include solo i record
+con `[Pubblica sul web] = 1`; salva i record in `data/dossier.json` ogni sei ore
+(quattro volte al giorno), oppure su avvio manuale o `repository_dispatch`.
+Il flusso `NEWS_SIMPLE` resta invariato.

@@ -26,21 +26,23 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
-      - name: Fetch Archivio Dossier da Airtable
+      - name: Test Dossier exporter
+        run: node --test scripts/fetch-dossier.test.mjs
+      - name: Fetch Dossier da Airtable
         env:
           AIRTABLE_PAT: ${{ secrets.AIRTABLE_PAT }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
-          AIRTABLE_TABLE_ID: tblNgUA368TzwLuZ7
-          OUTPUT_DIR: content/news/dossier
+          AIRTABLE_DOSSIER_TABLE_ID: ${{ secrets.AIRTABLE_DOSSIER_TABLE_ID }}
+          OUTPUT_FILE: data/dossier.json
         run: node scripts/fetch-dossier.mjs
-      - name: Commit dei contenuti generati
+      - name: Commit del JSON generato
         run: |
-          git add -A -- content/news/dossier
-          if git diff --cached --quiet -- content/news/dossier; then
+          git add -- data/dossier.json
+          if git diff --cached --quiet -- data/dossier.json; then
             echo "Nessuna modifica."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Aggiorna Dossier da Airtable"
+          git commit -m "Aggiorna Dossier JSON da Airtable" -- data/dossier.json
           git push origin HEAD:main
