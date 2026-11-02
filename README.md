@@ -62,3 +62,12 @@ Non inserire credenziali nei file o nei comandi salvati. I test usano risposte
 Airtable simulate e non richiedono accesso alla base. Non sono necessarie
 dipendenze npm. Lo script permette opzionalmente `AIRTABLE_TABLE` per una
 tabella diversa; il workflow usa `NEWS_SIMPLE`.
+
+## Dossier
+
+Il solo workflow Dossier e `.github/workflows/public-dossier.yml`. Esegue
+`scripts/fetch-dossier.mjs` con i secret `AIRTABLE_PAT`, `AIRTABLE_BASE_ID` e
+`AIRTABLE_DOSSIER_TABLE_ID` e con `OUTPUT_FILE: data/dossier.json`.
+Esporta in JSON i campi mappati da `toItems`, mantenendo il filtro
+`{Pubblica sul web}=1`, la paginazione e quattro esecuzioni giornaliere.
+Non modifica il flusso `NEWS_SIMPLE`.
